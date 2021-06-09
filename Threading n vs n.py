@@ -551,6 +551,7 @@ class Instance:
         for i in range(len(self.bullets)):
             self.bullets[i].move()
             self.bullets[i].collisionDetection()
+            self.bullets[i].delete()
 
 
     def drawAll(self):
