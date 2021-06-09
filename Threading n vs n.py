@@ -4,6 +4,7 @@ import copy
 import pickle
 import time
 import threading
+import os.path
 
 # display and scale
 bulletsSize = [25, 25]
@@ -702,7 +703,7 @@ def cloneGeneration(models):
 
 
 
-if loadFrom == 0:
+if loadFrom == 0 or not os.path.exists(loadFrom):
     models = []
     for i in range(nModels):
         models.append([Network([(nBodyLidar + nTurretLidar) * 6 + nRecurrence + 4] + networkShape + [7 + nRecurrence],
