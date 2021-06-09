@@ -10,7 +10,7 @@ bulletsSize = [25, 25]
 tanksSize = [50, 50]
 window_width = 1000
 window_height = 1000
-fps = 6000
+fps = 30
 
 # graphics
 tanksImages = ['tank_chassis .png', 'tank_turret.png']
@@ -31,7 +31,7 @@ nTurretLidar = 1
 
 # model
 nRecurrence = 4
-networkShape = [20, 10]
+networkShape = [10]
 
 # timings
 tanksShotFrames = 100
@@ -39,14 +39,16 @@ framesToUpdatePos = 1000
 staleReset = 1
 
 # game
-nModels = 6
-tanksPerRound = 4
-killsForWin = 2
+nModels = 9
+tanksPerRound = 1
+killsForWin = 1
 
 # save/load
 keepStats = 1
-loadFrom = 0
-saveTo = "Instances0"
+loadFrom = "Instances02"
+saveTo = "Instances02"
+training = 1#1 for training 0 for evaluation
+
 
 #evolution
 evolutionRate = 1.5
@@ -573,7 +575,8 @@ class Instance:
     def frame(self):
         self.updateTanks()
         self.updateBullets()
-        #self.drawAll()
+        if training == 0:
+            self.drawAll()
 
     def evaluate(self):
 
@@ -581,6 +584,8 @@ class Instance:
         _updatePosCount = 0
         _roundRunning = True
         while _roundRunning:
+            if training == 0:
+                clock.tick(fps)
             _updatePosTimer -= 1
             if _updatePosTimer < 1:
                 for i in range(len(self.tanks)):
@@ -596,14 +601,15 @@ class Instance:
             self.frame()
             if self.teams[0] == 0 and self.teams[1] == 0:
                 # print("rematch")
-                return self.evaluate()
+                print("rematch")
+                return Instance(self.models[self.model0dir][0], self.models[self.model1dir][0], tanksPerRound, self.models, self.model0dir, self.model1dir).evaluate()
             elif self.teams[0] <= tanksPerRound - killsForWin:
                 # print("m1 wins")
-                #print("w")
+                print("w")
                 return [self.teams[0], self.teams[1]]
             elif self.teams[1] <= tanksPerRound - killsForWin:
                 # print("m2 wins")
-                #print("w")
+                print("w")
                 return [self.teams[0], self.teams[1]]
 
     def updateModelsScore(self):
@@ -704,17 +710,24 @@ if loadFrom == 0:
 else:
     models = pickle.load(open(loadFrom, "rb"))
 
-_m2 = models
 
-for i in range(1000):
-    print("generation=",i)
-    _m1 = generation(_m2,tanksPerRound)
-    print(_m1)
-    _m2 = cloneGeneration(_m1)
-    print(_m2)
+if training == 1:
+    _m2 = models
+
+    for i in range(10000):
+        print("generation=",i)
+        _m1 = generation(_m2,tanksPerRound)
+        #print(_m1)
+        _m2 = cloneGeneration(_m1)
+        #print(_m2)
+        pickle.dump(_m2, open(saveTo, "wb"))
+
     pickle.dump(_m2, open(saveTo, "wb"))
+    pickle.dump(_m2, open("backup1", "wb"))
+else:
 
-pickle.dump(_m2, open(saveTo, "wb"))
+    models = pickle.load(open(loadFrom, "rb"))
+    Instance(models[0][0],models[1][0],1,models,0,1).evaluate()
 
 #model1 = Network([(nBodyLidar + nTurretLidar) * 6 + nRecurrence + 4] + networkShape + [7 + nRecurrence],
 #                               Activation_ReLU)
